@@ -1,9 +1,9 @@
-/**
+/*
  * New BSD License
  * http://www.opensource.org/licenses/bsd-license.php
  * Copyright 2009-2011 RaptorProject (http://code.google.com/p/raptor-chess-interface/)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -17,26 +17,27 @@ package raptor.chat;
  * A class defining an inbound message received from a server.
  */
 public class ChatEvent {
-	protected String channel;
-	protected String gameId;
-	protected String message;
-	protected String source;
-	protected long time;
-	protected ChatType type;
-	protected boolean hasSoundBeenHandled;
+
+	private String channel;
+    private String gameId;
+    private String message;
+    private String source;
+	private long time;
+    private ChatType type;
+    private boolean hasSoundBeenHandled;
 
 	public ChatEvent() {
 		time = System.currentTimeMillis();
 	}
 
-	public ChatEvent(String source, ChatType type, String message) {
+	public ChatEvent(final String source, final ChatType type, final String message) {
 		this();
 		this.source = source;
 		this.type = type;
 		this.message = message;
 	}
 
-	public ChatEvent(String source, ChatType type, String message, String gameId) {
+	public ChatEvent(final String source, final ChatType type, final String message, final String gameId) {
 		this(source, type, message);
 		this.gameId = gameId;
 	}
@@ -52,7 +53,7 @@ public class ChatEvent {
 	/**
 	 * If the chat event represents a tell about a game, i.e.
 	 * kibitz,whisper,etc, this is the game id. Otherwise it is null.
-	 * 
+	 *
 	 * @return
 	 */
 	public String getGameId() {
@@ -61,7 +62,7 @@ public class ChatEvent {
 
 	/**
 	 * Returns the entire server message.
-	 * 
+	 *
 	 * @return Entire message involved in this ChatEvent.
 	 */
 	public String getMessage() {
@@ -74,7 +75,7 @@ public class ChatEvent {
 	 * sending the tell to the channel. If its a shout or c-shout, its the
 	 * person shouting. If its a kibitz or whisper, its the person kibitzing or
 	 * whispering. If its a say, its the person sending the say.
-	 * 
+	 *
 	 * @return The user name of the person involved in this ChatEvent.
 	 */
 	public String getSource() {
@@ -83,7 +84,7 @@ public class ChatEvent {
 
 	/**
 	 * The time in EPOC the chat event was created.
-	 * 
+	 *
 	 * @return ChatEvent creation timestamp in EPOC millisconds.
 	 */
 	public long getTime() {
@@ -92,7 +93,6 @@ public class ChatEvent {
 
 	/**
 	 * @return The type of ChatEvent.
-	 * @see ChatTypes.
 	 */
 	public ChatType getType() {
 		return type;
@@ -105,26 +105,26 @@ public class ChatEvent {
 		return hasSoundBeenHandled;
 	}
 
-	public void setChannel(String channel) {
+	public void setChannel(final String channel) {
 		this.channel = channel;
 	}
 
-	public void setGameId(String gameId) {
+	public void setGameId(final String gameId) {
 		this.gameId = gameId;
 	}
 
 	/**
 	 * Sets the flag denoting this event has been handled.
 	 */
-	public void setHasSoundBeenHandled(boolean hasSoundBeenHandled) {
+	public void setHasSoundBeenHandled(final boolean hasSoundBeenHandled) {
 		this.hasSoundBeenHandled = hasSoundBeenHandled;
 	}
 
-	public void setMessage(String message) {
+	public void setMessage(final String message) {
 		this.message = message;
 	}
 
-	public void setSource(String source) {
+	public void setSource(final String source) {
 		this.source = source;
 	}
 
@@ -132,16 +132,15 @@ public class ChatEvent {
 	 * @param time
 	 *            The time that this chat event occurred.
 	 */
-	public void setTime(long time) {
+	public void setTime(final long time) {
 		this.time = time;
 	}
 
 	/**
 	 * @param type
 	 *            The type of ChatEvent this is.
-	 * @see ChatTypes.
 	 */
-	public void setType(ChatType type) {
+	public void setType(final ChatType type) {
 		this.type = type;
 	}
 

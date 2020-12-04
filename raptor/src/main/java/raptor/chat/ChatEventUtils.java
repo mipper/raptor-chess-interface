@@ -3,7 +3,7 @@
  * http://www.opensource.org/licenses/bsd-license.php
  * Copyright 2009-2011 RaptorProject (http://code.google.com/p/raptor-chess-interface/)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -23,10 +23,10 @@ public class ChatEventUtils {
 	public static final char FIELD_SEPARATOR = '\u0005';
 	public static final char NEW_LINE_REPLACEMENT = '\u0006';
 
-	public static ChatEvent deserializeChatEvent(String lineOfText) {
-		RaptorStringTokenizer tok = new RaptorStringTokenizer(lineOfText, ""
-				+ FIELD_SEPARATOR, false);
-		ChatEvent result = new ChatEvent();
+	public static ChatEvent deserializeChatEvent(final String lineOfText) {
+		final RaptorStringTokenizer tok = new RaptorStringTokenizer(lineOfText, ""
+                                                                                + FIELD_SEPARATOR, false);
+		final ChatEvent result = new ChatEvent();
 		result.setTime(Long.parseLong(deserializeField(tok.nextToken())));
 		result.setType(ChatType.valueOf(deserializeField(tok.nextToken())));
 		result.setGameId(deserializeField(tok.nextToken()));
@@ -36,24 +36,23 @@ public class ChatEventUtils {
 		return result;
 	}
 
-	public static String serializeChatEvent(ChatEvent e) {
-		StringBuilder result = new StringBuilder(1000);
-        result.append(serializeField(String.valueOf(e.time))).append(FIELD_SEPARATOR);
-        result.append(serializeField(String.valueOf(e.type))).append(FIELD_SEPARATOR);
-        result.append(serializeField(e.gameId)).append(FIELD_SEPARATOR);
-        result.append(serializeField(e.channel)).append(FIELD_SEPARATOR);
-        result.append(serializeField(e.source)).append(FIELD_SEPARATOR);
-		result.append(serializeField(e.message));
-		return result.toString();
+	static String serializeChatEvent(final ChatEvent e) {
+		return new StringBuilder(1000).append(serializeField(String.valueOf(e.getTime()))).append(FIELD_SEPARATOR)
+                                      .append(serializeField(String.valueOf(e.getType()))).append(FIELD_SEPARATOR)
+                                      .append(serializeField(e.getGameId())).append(FIELD_SEPARATOR)
+                                      .append(serializeField(e.getChannel())).append(FIELD_SEPARATOR)
+                                      .append(serializeField(e.getSource())).append(FIELD_SEPARATOR)
+                                      .append(serializeField(e.getMessage()))
+                                      .toString();
 	}
 
-	protected static String deserializeField(String field) {
+	protected static String deserializeField(final String field) {
 		String result = StringUtils.defaultString(field);
 		result = StringUtils.replaceChars(result, NEW_LINE_REPLACEMENT, '\n');
 		return result;
 	}
 
-	protected static String serializeField(String field) {
+	protected static String serializeField(final String field) {
 		String result = StringUtils.defaultString(field);
 		result = StringUtils.replaceChars(result, '\n', NEW_LINE_REPLACEMENT);
 		return result;

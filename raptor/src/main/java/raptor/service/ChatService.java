@@ -3,7 +3,7 @@
  * http://www.opensource.org/licenses/bsd-license.php
  * Copyright 2009-2011 RaptorProject (http://code.google.com/p/raptor-chess-interface/)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -28,27 +28,26 @@ import raptor.pref.PreferenceKeys;
  */
 public class ChatService {
 
-	public static interface ChatListener {
-		public void chatEventOccured(ChatEvent e);
+	public interface ChatListener {
+		void chatEventOccured(ChatEvent e);
 
-		public boolean isHandling(ChatEvent e);
+		boolean isHandling(ChatEvent e);
 	}
 
-	protected Connector connector = null;
-	protected List<ChatListener> listeners = new ArrayList<ChatListener>(5);
-	protected List<ChatListener> mainConsoleListeners = new ArrayList<ChatListener>(
-			5);
-	protected ChatLogger logger = null;
+	protected Connector connector;
+	protected List<ChatListener> listeners = new ArrayList<>(5);
+	protected List<ChatListener> mainConsoleListeners = new ArrayList<>(5);
+	protected ChatLogger logger;
 
 	/**
 	 * Constructs a chat service for the specified connector.
-	 * 
+	 *
 	 * @param connector
 	 */
 	public ChatService(Connector connector) {
 		this.connector = null;
-		logger = new ChatLogger(connector, Raptor.USER_RAPTOR_HOME_PATH
-				+ "/chatcache/" + connector.getShortName() + ".txt");
+		logger = new ChatLogger(connector,
+                                Raptor.USER_RAPTOR_HOME_PATH + "/chatcache/" + connector.getShortName() + ".txt");
 	}
 
 	/**
@@ -94,35 +93,32 @@ public class ChatService {
 	 * Chat events are published asynchronously.
 	 */
 	public void publishChatEvent(final ChatEvent event) {
-		ThreadService.getInstance().run(new Runnable() {
-			public void run() {
-				if (listeners == null) {
-					return;
-				}
-				boolean wasHandled = false;
-				for (ChatListener listener : listeners) {
-					if (listener.isHandling(event)) {
-						listener.chatEventOccured(event);
-						wasHandled = true;
-					}
-				}
+		ThreadService.getInstance().run(() -> {
+            if (listeners == null) {
+                return;
+            }
+            boolean wasHandled = false;
+            for (ChatListener listener : listeners) {
+                if (listener.isHandling(event)) {
+                    listener.chatEventOccured(event);
+                    wasHandled = true;
+                }
+            }
 
-				if (!wasHandled
-						|| !Raptor
-								.getInstance()
-								.getPreferences()
-								.getBoolean(
-										PreferenceKeys.CHAT_REMOVE_SUB_TAB_MESSAGES_FROM_MAIN_TAB)) {
-					for (ChatListener listener : mainConsoleListeners) {
-						if (listener.isHandling(event)) {
-							listener.chatEventOccured(event);
-							wasHandled = true;
-						}
-					}
-				}
-				logger.write(event);
-			}
-		});
+            if (!wasHandled
+                    || !Raptor
+                            .getInstance()
+                            .getPreferences()
+                            .getBoolean(
+                                    PreferenceKeys.CHAT_REMOVE_SUB_TAB_MESSAGES_FROM_MAIN_TAB)) {
+                for (ChatListener listener : mainConsoleListeners) {
+                    if (listener.isHandling(event)) {
+                        listener.chatEventOccured(event);
+                    }
+                }
+            }
+            logger.write(event);
+        });
 	}
 
 	/**

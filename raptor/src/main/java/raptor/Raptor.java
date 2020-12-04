@@ -3,7 +3,7 @@
  * http://www.opensource.org/licenses/bsd-license.php
  * Copyright 2009-2011 RaptorProject (http://code.google.com/p/raptor-chess-interface/)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -64,12 +64,12 @@ import raptor.util.RaptorRunnable;
  * Raptor is a singleton representing the application. It contains methods to
  * get various pieces of the application (e.g. the
  * RaptorWindow,preferences,etc).
- * 
+ *
  * This classes main is the application main.
  */
 public class Raptor implements PreferenceKeys {
 
-    private final static String MINIMUM_JAVA_VERSION = "1.6";
+    private final static String MINIMUM_JAVA_VERSION = "1.8";
     public static final File DEFAULT_HOME_DIR = new File("defaultHomeDir/");
     public static final String APP_HOME_DIR = ".raptor/";
     public static final File USER_RAPTOR_DIR = new File(System
@@ -90,14 +90,14 @@ public class Raptor implements PreferenceKeys {
     private static Raptor instance;
     private static Display display;
     protected static L10n local;
-	
+
     static {
 	RaptorLogger.initializeLogger();
     }
 
     public static void createInstance() {
 	instance = new Raptor();
-	instance.init();		
+	instance.init();
     }
     /**
      * Print message and stop application: cannot rely on standard
@@ -112,7 +112,7 @@ public class Raptor implements PreferenceKeys {
 
     /**
      * Returns the singleton raptor instance.
-     * 
+     *
      * @return
      */
     public static Raptor getInstance() {
@@ -122,7 +122,7 @@ public class Raptor implements PreferenceKeys {
     /**
      * The applications main method. Takes no arguments.
      */
-    public static void main(String args[]) {		
+    public static void main(String args[]) {
 	//
 	// Reality check: we really need at least version MINIMUM_JAVA_VERSION
 	//
@@ -135,9 +135,9 @@ public class Raptor implements PreferenceKeys {
 	try {
 	    Display.setAppName("Raptor");
 	    display = new Display();
-			
+
 	    createInstance();
-                        
+
 	    if (L10n.noSavedLocaleFile)
 		L10n.updateLanguage(true);
 	    // Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -146,7 +146,7 @@ public class Raptor implements PreferenceKeys {
 	    // getInstance().shutdown();
 	    // }
 	    // });
-			
+
 	    display.addListener(SWT.Close, new Listener() {
 		    public void handleEvent(Event event) {
 			getInstance().shutdown();
@@ -165,18 +165,18 @@ public class Raptor implements PreferenceKeys {
 		ThreadService.getInstance().scheduleOneShot(750,
 							    new Runnable() {
 								public void run() {
-								    // See if we need to launch the login dialog		
+								    // See if we need to launch the login dialog
 								    boolean connected = connector.onAutoConnect();
 								    if (!connected && connector instanceof FicsConnector
 									&& Raptor.getInstance().getPreferences()
 									.getBoolean(APP_IS_LAUNCHING_LOGIN_DIALOG)) {
-									((FicsConnector)connector).showLoginDialog();										
+									((FicsConnector)connector).showLoginDialog();
 								    }
-											
+
 								}
 							    });
 	    }
-			
+
 	    //			ThreadService.getInstance().run(new Runnable() {
 	    //
 	    //				@Override
@@ -187,11 +187,11 @@ public class Raptor implements PreferenceKeys {
 	    //					else if (getInstance().getPreferences().getBoolean("ready-to-update"))
 	    //						getInstance().getPreferences().setValue("ready-to-update", "false");
 	    //				}
-	    //				
+	    //
 	    //			});
 
 	    display.timerExec(500, new Runnable() {
-		    public void run() {	
+		    public void run() {
 			try {
 			    // Launch the home page after a half second it requires
 			    // a
@@ -216,14 +216,14 @@ public class Raptor implements PreferenceKeys {
 			    // Initialize the UCIEngineService after a half second.
 			    // Requires a raptor window in case there is an error.
 			    //UCIEngineService.getInstance();
-						
+
 			    //Remove the old imageCache user directory if its there. (version .98)
 			    FileUtils.deleteDir(new File(USER_RAPTOR_HOME_PATH + "/imagecache"));
-						
-						
-						
-						
-					  
+
+
+
+
+
 			} catch (Throwable t) {
 			    Raptor.getInstance().onError(
 							 "Error initializing Raptor", t);
@@ -243,7 +243,7 @@ public class Raptor implements PreferenceKeys {
 	    } else {
 		instance.LOG
 		    .error(
-			   "Error occured in main: (If this is a widget is disposed error just ignore it its nothing)",
+			   "Error occurred in main: (If this is a widget is disposed error just ignore it its nothing)",
 			   t);
 	    }
 	} finally {
@@ -276,9 +276,9 @@ public class Raptor implements PreferenceKeys {
     protected Clipboard clipboard;
 
     protected boolean isShutdown = false;
-	
+
     /**
-     * The list contains hash codes of already displayed to user 
+     * The list contains hash codes of already displayed to user
      * errors to avoid duplication and be less annoying.
      */
     private List<Integer> errorsDisplayed = new ArrayList<Integer>();
@@ -380,7 +380,7 @@ public class Raptor implements PreferenceKeys {
     /**
      * Returns the image registry. All images should be registered in this
      * registry.
-     * 
+     *
      * @return
      */
     public RaptorImageRegistry getImageRegistry() {
@@ -433,7 +433,7 @@ public class Raptor implements PreferenceKeys {
 	if (!isDisposed()) {
 	    if (errorsDisplayed.contains(error.hashCode()))
 		return;
-			
+
 	    errorsDisplayed.add(error.hashCode());
 
             instance.raptorWindow.getShell().getDisplay().asyncExec(
@@ -473,7 +473,7 @@ public class Raptor implements PreferenceKeys {
     /**
      * Prompts a user for the answer to a question. The user enters text. The
      * text the user entered is returned.
-     * 
+     *
      * @answer the initial text to place in the users answer.
      */
     public String promptForText(final String question, String answer) {
@@ -534,7 +534,7 @@ public class Raptor implements PreferenceKeys {
 		LOG.warn("Error shutting down EcoService", t);
 	    }
 	}
-		
+
 	if (SoundService.serviceCreated) {
 	    try {
 		SoundService.getInstance().dispose();
@@ -566,7 +566,7 @@ public class Raptor implements PreferenceKeys {
 		LOG.warn("Error shutting UCIEngineService", t);
 	    }
 	}
-		
+
 	if (XboardEngineService.serviceCreated) {
 	    try {
 		XboardEngineService.getInstance().dispose();
@@ -660,15 +660,15 @@ public class Raptor implements PreferenceKeys {
     public void shutdown(boolean isIgnoringPreferenceSaves) {
 	shutdownWithoutExit(isIgnoringPreferenceSaves);
 	System.exit(0);
-    }	
+    }
 
     /**
      * Initializes raptor.
      */
     private void init() {
-	preferences = new RaptorPreferenceStore();			
-	install();	
-		
+	preferences = new RaptorPreferenceStore();
+	install();
+
 	// Make sure all of the Singleton services get loaded.
 	ThreadService.getInstance();
 	//DictionaryService.getInstance();
@@ -681,7 +681,7 @@ public class Raptor implements PreferenceKeys {
 	//ScriptService.getInstance();
 	//ActionScriptService.getInstance();
 	//UCIEngineService.getInstance();
-	//AliasService.getInstance();			
+	//AliasService.getInstance();
     }
 
     /**
@@ -692,7 +692,7 @@ public class Raptor implements PreferenceKeys {
     private void install() {
 	try {
 	    FileUtils.installFiles(USER_RAPTOR_DIR.getAbsolutePath());
-			
+
 	    if (!new File(preferences.getString(APP_PGN_FILE)).exists()) {
 		FileUtils.makeEmptyFile(preferences.getString(APP_PGN_FILE));
 	    }

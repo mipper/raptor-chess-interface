@@ -3,7 +3,7 @@
  * http://www.opensource.org/licenses/bsd-license.php
  * Copyright 2009-2011 RaptorProject (http://code.google.com/p/raptor-chess-interface/)
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -21,58 +21,57 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.slf4j.*;
 import raptor.Raptor;
 import raptor.connector.Connector;
 import raptor.connector.bics.BicsConnector;
 import raptor.connector.fics.FicsConnector;
 import raptor.pref.PreferenceKeys;
 import raptor.service.ThreadService;
-import raptor.util.RaptorLogger;
 import raptor.util.RaptorRunnable;
 import raptor.util.RaptorStringTokenizer;
 
 /**
  * Logs chat messages to a file and provides, and allows a
  * ChatEventParseListener to parse the file.
- * 
+ *
  * This is being used to add old tells to a newly created Channel or Person tab.
- * 
+ *
  */
 public class ChatLogger {
-	public static interface ChatEventParseListener {
+
+	public interface ChatEventParseListener {
 		/**
 		 * Invoked on each chat event encountered in the file. Returns true if
 		 * the parse should continue, false if it should cease.
 		 */
-		public boolean onNewEventParsed(ChatEvent event);
+        boolean onNewEventParsed(ChatEvent event);
 
-		public void onParseCompleted();
+		void onParseCompleted();
 	}
 
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	private static final Logger _logger = LoggerFactory.getLogger(ChatLogger.class);
 
-	private static final RaptorLogger LOG = RaptorLogger.getLog(ChatLogger.class);
-
-	protected String pathToFile;
-	protected Connector connector;
+	private String pathToFile;
+	private final Connector connector;
 
 	/**
 	 * Constructs a ChatLogger which writes to the specified file. Deletes the
 	 * file if it already exists.
-	 * 
+	 *
 	 * @param connector
 	 *            The connector
 	 * @param pathToFile
 	 *            The path to the backing file.
 	 */
-	public ChatLogger(Connector connector, String pathToFile) {
+	public ChatLogger(final Connector connector, final String pathToFile) {
 		this(connector, pathToFile, true);
 	}
 
 	/**
 	 * Constructs a ChatLogger which writes to the specified file.
-	 * 
+	 *
 	 * @param connector
 	 *            The connector
 	 * @param pathToFile
@@ -80,7 +79,7 @@ public class ChatLogger {
 	 * @param isDeleting
 	 *            True if an existing file should be deleted, false otherwise.
 	 */
-	public ChatLogger(Connector connector, String pathToFile, boolean isDeleting) {
+	public ChatLogger(final Connector connector, final String pathToFile, final boolean isDeleting) {
 		this.pathToFile = pathToFile;
 		if (isDeleting) {
 			delete();
@@ -90,25 +89,22 @@ public class ChatLogger {
 
 	/**
 	 * Creates a read only chat logger.
-	 * 
+	 *
 	 * @param pathToFile
 	 *            Path to log file.
 	 * @param isDeleting
 	 *            True if the file should be deleted if it exists, false
 	 *            otherwise.
 	 */
-	public ChatLogger(String pathToFile, boolean isDeleting) {
-		this.pathToFile = pathToFile;
-		if (isDeleting) {
-			delete();
-		}
+	public ChatLogger(final String pathToFile, final boolean isDeleting) {
+	    this(null, pathToFile, isDeleting);
 	}
 
 	/**
 	 * Deletes the backing file.
 	 */
 	public void delete() {
-		File file = new File(pathToFile);
+		final File file = new File(pathToFile);
 		file.delete();
 	}
 
@@ -116,42 +112,29 @@ public class ChatLogger {
 	 * Parses the ChatLogger and invokes the listener on each chat event
 	 * encountered.
 	 */
-	public void parseFile(ChatEventParseListener listener) {
+	public void parseFile(final ChatEventParseListener listener) {
 		synchronized (this) {
-			@SuppressWarnings("unused")
-			long startTime = System.currentTimeMillis();
-			BufferedReader reader = null;
-			try {
-				reader = new BufferedReader(new FileReader(pathToFile));
+			try (final BufferedReader reader = new BufferedReader(new FileReader(pathToFile))) {
 				String currentLine = reader.readLine();
 				while (currentLine != null) {
 					try {
-						ChatEvent event = ChatEventUtils
-								.deserializeChatEvent(currentLine);
+						final ChatEvent event = ChatEventUtils.deserializeChatEvent(currentLine);
 						if (!listener.onNewEventParsed(event)) {
 							break;
 						}
-					} catch (Throwable t) {
-						LOG.warn("Error reading chat event line " + currentLine
-								+ " skipping ChatEvent", t);
+					} catch (final Throwable t) {
+                        _logger.warn("Error reading chat event line {} skipping ChatEvent", currentLine, t);
 					}
 					currentLine = reader.readLine();
 				}
 				listener.onParseCompleted();
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				throw new RuntimeException(ioe);
-			} finally {
-				if (reader != null) {
-					try {
-						reader.close();
-					} catch (Throwable t) {
-					}
-				}
 			}
 		}
 	}
 
-	protected boolean vetoWrite(ChatEvent event) {
+	private boolean vetoWrite(final ChatEvent event) {
 		return event.getType() == ChatType.GAMES
 				|| event.getType() == ChatType.BUGWHO_ALL
 				|| event.getType() == ChatType.BUGWHO_AVAILABLE_TEAMS
@@ -164,30 +147,19 @@ public class ChatLogger {
 	 * Writes a chat even to this chat logger. Also appends the chat event to
 	 * the configured loggers in the users preferences.
 	 */
-	public void write(ChatEvent event) {
+	public void write(final ChatEvent event) {
 		if (vetoWrite(event)) {
 			return;
 		}
 		synchronized (this) {
 			writeToLogFiles(event);
 			if (event.getMessage().length() < 1500) {
-				@SuppressWarnings("unused")
-				long startTime = System.currentTimeMillis();
-				FileWriter writer = null;
-				try {
-					writer = new FileWriter(pathToFile, true);
-					writer.write(ChatEventUtils.serializeChatEvent(event)
-							+ "\n");
-				} catch (Throwable t) {
-					LOG.warn("Error occured writing chat event: ", t);
-				} finally {
-					if (writer != null) {
-						try {
-							writer.close();
-						} catch (Throwable t) {
-						}
-					}
-				}
+                try (final FileWriter writer = new FileWriter(pathToFile, true)) {
+                    writer.write(ChatEventUtils.serializeChatEvent(event) + "\n");
+                }
+                catch (final Throwable t) {
+                    _logger.warn("Error occurred writing chat event: ", t);
+                }
 			}
 		}
 	}
@@ -201,66 +173,58 @@ public class ChatLogger {
 		}
 		if (connector instanceof FicsConnector) {
 			return "fics";
-		} else if (connector instanceof BicsConnector) {
-			return "bics";
-		} else {
-			throw new IllegalStateException("Unknown Connector type: "
-					+ connector);
 		}
-	}
+        if (connector instanceof BicsConnector) {
+            return "bics";
+        }
+        throw new IllegalStateException("Unknown Connector type: " + connector);
+    }
 
 	/**
 	 * Writes the chat event to all log files specified in the Preferences.
-	 * 
+	 *
 	 * @param event
 	 *            The event to log.
 	 */
-	protected void writeToLogFiles(final ChatEvent event) {
+    private void writeToLogFiles(final ChatEvent event) {
 		ThreadService.getInstance().run(new RaptorRunnable() {
 			@Override
 			public void execute() {
-				if (Raptor.getInstance().getPreferences().getBoolean(
-						PreferenceKeys.APP_IS_LOGGING_CONSOLE)
-						&& !vetoLogging(event.getSource())) {
-					appendToFile(Raptor.USER_RAPTOR_HOME_PATH
-							+ "/logs/console/" + getConnectorType()
-							+ "-console.txt", event);
+				if (Raptor.getInstance()
+                          .getPreferences()
+                          .getBoolean(PreferenceKeys.APP_IS_LOGGING_CONSOLE) && !vetoLogging(event.getSource())) {
+					appendToFile(Raptor.USER_RAPTOR_HOME_PATH + "/logs/console/" + getConnectorType() + "-console.txt",
+                                 event);
 				}
-				if (Raptor.getInstance().getPreferences().getBoolean(
-						PreferenceKeys.APP_IS_LOGGING_CHANNEL_TELLS)
-						&& event.getType() == ChatType.CHANNEL_TELL) {
-					appendToFile(Raptor.USER_RAPTOR_HOME_PATH
-							+ "/logs/console/" + getConnectorType() + "-"
-							+ event.getChannel() + ".txt", event);
+				if (Raptor.getInstance()
+                          .getPreferences()
+                          .getBoolean(PreferenceKeys.APP_IS_LOGGING_CHANNEL_TELLS)
+                    && event.getType() == ChatType.CHANNEL_TELL) {
+					appendToFile(Raptor.USER_RAPTOR_HOME_PATH + "/logs/console/" + getConnectorType() + "-" + event.getChannel() + ".txt",
+                                 event);
 				}
-				if (Raptor.getInstance().getPreferences().getBoolean(
-						PreferenceKeys.APP_IS_LOGGING_PERSON_TELLS)
-						&& event.getType() == ChatType.TELL
-						&& !vetoLogging(event.getSource())) {
-					appendToFile(Raptor.USER_RAPTOR_HOME_PATH
-							+ "/logs/console/" + getConnectorType() + "-"
-							+ event.getSource().toLowerCase() + ".txt", event);
+				if (Raptor.getInstance()
+                          .getPreferences()
+                          .getBoolean(PreferenceKeys.APP_IS_LOGGING_PERSON_TELLS)
+                    && event.getType() == ChatType.TELL
+                    && !vetoLogging(event.getSource())) {
+					appendToFile(Raptor.USER_RAPTOR_HOME_PATH + "/logs/console/" + getConnectorType() + "-" + event.getSource().toLowerCase() + ".txt",
+                                 event);
 				}
-				if (Raptor.getInstance().getPreferences().getBoolean(
-						PreferenceKeys.APP_IS_LOGGING_PERSON_TELLS)
-						&& event.getType() == ChatType.OUTBOUND) {
-
-					RaptorStringTokenizer tok = new RaptorStringTokenizer(event
-							.getMessage(), " ", true);
-
-					String firstWord = tok.nextToken();
-					String secondWord = tok.nextToken();
-
+				if (Raptor.getInstance()
+                          .getPreferences()
+                          .getBoolean(PreferenceKeys.APP_IS_LOGGING_PERSON_TELLS)
+                    && event.getType() == ChatType.OUTBOUND) {
+					final RaptorStringTokenizer tok = new RaptorStringTokenizer(event.getMessage(), " ", true);
+					final String firstWord = tok.nextToken();
+					final String secondWord = tok.nextToken();
 					if (firstWord != null && secondWord != null) {
-						if ("tell".startsWith(firstWord.toLowerCase())
-								&& !vetoLogging(secondWord)) {
+						if ("tell".startsWith(firstWord.toLowerCase()) && !vetoLogging(secondWord)) {
 							try {
 								Integer.parseInt(secondWord);
-							} catch (NumberFormatException nfe) {
-								appendToFile(Raptor.USER_RAPTOR_HOME_PATH
-										+ "/logs/" + getConnectorType() + "-"
-										+ secondWord.toLowerCase() + ".txt",
-										event);
+							} catch (final NumberFormatException nfe) {
+								appendToFile(Raptor.USER_RAPTOR_HOME_PATH + "/logs/" + getConnectorType() + "-" + secondWord.toLowerCase() + ".txt",
+                                             event);
 							}
 						}
 					}
@@ -271,41 +235,38 @@ public class ChatLogger {
 
 	/**
 	 * Returns true if logging should be vetoed. Used to filter out bot tells
-	 * 
+	 *
 	 * @param userName
 	 *            The user.
 	 * @return The result.
 	 */
-	protected boolean vetoLogging(String userName) {
+    private static boolean vetoLogging(final String userName) {
 		return userName != null
 				&& (userName.equalsIgnoreCase("gamebot")
 						|| userName.equalsIgnoreCase("notesbot")
-						|| userName.equalsIgnoreCase("problembot") || userName
-						.equalsIgnoreCase("endgamebot"));
+						|| userName.equalsIgnoreCase("problembot")
+                        || userName.equalsIgnoreCase("endgamebot"));
 	}
 
 	/**
 	 * Appends the chat event to the specified file.
-	 * 
+	 *
 	 * @param fileName
 	 *            The file name.
 	 * @param event
 	 *            The chat event.
 	 */
-	protected void appendToFile(String fileName, ChatEvent event) {
-		FileWriter fileWriter = null;
-		try {
-			fileWriter = new FileWriter(fileName, true);
-            fileWriter.append("[").append(DATE_FORMAT.format(new Date(event.time))).append("] ").append(event.getMessage()).append("\n");
-			fileWriter.flush();
-		} catch (IOException ioe) {
-			Raptor.getInstance().onError(
-					"Error occured writing to file: " + fileName, ioe);
-		} finally {
-			try {
-				fileWriter.close();
-			} catch (Throwable t) {
-			}
-		}
+	protected static void appendToFile(final String fileName, final ChatEvent event) {
+        try (final FileWriter fileWriter = new FileWriter(fileName, true)) {
+            fileWriter.append("[")
+                      .append(DATE_FORMAT.format(new Date(event.getTime())))
+                      .append("] ")
+                      .append(event.getMessage())
+                      .append("\n")
+                      .flush();
+        }
+        catch (final IOException ioe) {
+            Raptor.getInstance().onError("Error occurred writing to file: " + fileName, ioe);
+        }
 	}
 }

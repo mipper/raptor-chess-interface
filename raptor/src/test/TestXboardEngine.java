@@ -1,4 +1,3 @@
-package testcases;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,7 +7,7 @@ import raptor.engine.xboard.XboardInfoListener;
 import raptor.util.RaptorLogger;
 
 public class TestXboardEngine {
-	
+
 	@Test
 	public void testGnuChessConnectivity() {
 		RaptorLogger.initializeLogger();
@@ -20,7 +19,7 @@ public class TestXboardEngine {
 		engine.analyze(new XboardInfoListener() {
 			public void engineSentInfo(String ply, String score, String time, String nodes,
 					String pv) {
-				
+
 			}
 		});
 		try {
